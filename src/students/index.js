@@ -39,12 +39,36 @@ router.post('/', (req, res) => {
   newStudents.id = uniqid()
 
   // 2.1 extract the req. body and create an unique id for him/her
+  
   students.push(newStudents)
 
   // 3. replace old content in the file with new array
   fs.writeFileSync(studentsJSONPath, JSON.stringify(students))
 
   res.status(201).send(newStudents)
+})
+
+router.put('/:id', (req, res) => {
+
+  const newStudentsArray = students.filter(student => student.id !== req.params.id)
+
+  const modifiedUser = req.body
+  modifiedUser.ID = req.params.id
+
+  newStudentsArray.push(modifiedUser)
+
+  fs.writeFileSync(studentsJSONPath, JSON.stringify(newStudentsArray))
+
+  res.send({ msg: 'Data edited'})
+
+})
+
+router.delete('/:id', (req, res) => {
+  const newStudentsArray = students.filter(student => student.ID !== req.params.id)
+
+  fs.writeFileSync(studentsJSONPath, JSON.stringify(newStudentsArray))
+
+  res.status(204).send()
 })
 
 
