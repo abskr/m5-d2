@@ -8,23 +8,45 @@ import express from 'express'
 import {check, validationResult} from 'express-validator'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
+import { dirname, join, parse } from 'path'
 import uniqid from 'uniqid'
 
 const router = express.Router()
 
-const __filename = fileURLToPath(import.meta.url)
-const projectsJSONPath = join(dirname(__filename), 'projects.json')
+// const __currentPath = fileURLToPath(import.meta.url)
+// console.log(__currentPath)
+// const projectsJSONPath = join(dirname(__currentPath), 'projects.json')
+
+const __currentPath = fileURLToPath(import.meta.url)
+//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\projects\index.js
+
+const __pathToProjects = dirname(__currentPath)
+//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\projects
+
+const __pathToProjectsJson = join(__pathToProjects, "projects.json")
+//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\projects\projects.json
+
+const __pathToSrc = dirname(__pathToProjects)
+//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src
+
+const __pathToStudents = join(__pathToSrc, "students")
+//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\students
+
+const __pathToStudentsJson = join(__pathToStudents, "students.json")
+//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\students\students.json
 
 const getProjects = () => {
-  const toBeBuffer = fs.readFileSync(projectsJSONPath)
+  const toBeBuffer = fs.readFileSync(__pathToProjectsJson)
   const toBeString = toBeBuffer.toString()
   const toBeJSON = JSON.parse(toBeString)
   return toBeJSON
 }
 
 const getStudents = () => {
- 
+  const toBeBuffer = fs.readFileSync(__pathToStudentsJson)
+  const toBeString = toBeBuffer.toString()
+  const toBeJSON = JSON.parse(toBeString)
+  return toBeJSON
 }
 
 router.get("/", (req, res) => {
@@ -48,21 +70,29 @@ router.get("/:id", (req, res, next) => {
   }
 })
 
-router.post("/", [check("name").exists().withMessage("Insert name!"), check("repoURL").exists().isURL().withMessage("Insert a valid URL of the repository!"), check("liveURL").exists().isURL().withMessage("Insert a valid URL of your project!")], (req, res, next) => {
+router.post("/", [check("name").exists().withMessage("Insert name!"), check("repoURL").exists().isURL().withMessage("Insert a valid URL of the repository!"), check("liveURL").exists().isURL().withMessage("Insert a valid URL of your project!"), check("studentId").exists().withMessage("Insert your valid student ID!")], (req, res, next) => {
   try {
     const errors = validationResult(req)
 
-    if(errors.isEmpty()) {
+    if (errors.isEmpty()) {
       const projects = getProjects()
+      const students = getStudents()
       const newProject = {
         ...req.body,
         projectId: uniqid(),
         createdAt: new Date(),
-        studentID: uniqid(),
       }
-      projects.push(newProject)
-      fs.writeFileSync(join(dirname(__filename), 'projects.json'), JSON.stringify(projects))
-      res.status(201).send(newProject)
+      const selectedStudent = students.filter(student => student.id === newProject.studentId)
+      if (selectedStudent) {
+        projects.push(newProject)
+        fs.writeFileSync(__pathToProjectsJson, JSON.stringify(projects))
+        res.status(201).send(newProject)
+      } else {
+        const err = new Error()
+        err.errorList = errors
+        err.httpStatusCode = 400
+        next(err)
+      }
     } else {
       const err = new Error()
       err.errorList = errors
@@ -87,7 +117,7 @@ router.put("/:id", (req, res, next) => {
 
     if (editedProject.projectId === req.params.id) {
       newArrayOfProjects.push(editedProject)
-      fs.writeFileSync(join(dirname(__filename), 'projects.json'), JSON.stringify(newArrayOfProjects))
+      fs.writeFileSync(__pathToProjectsJson, JSON.stringify(newArrayOfProjects))
       res.send(editedProject)
     } else {
       res.status(400).send({errMsg: "No project found!"})
@@ -102,7 +132,7 @@ router.delete("/:id", (req, res, next) => {
   try {
     const projects = getProjects()
     const filteredProjects = projects.filter(project => project.projectId !== req.params.id)
-    fs.writeFileSync(join(dirname(__filename), 'projects.json'), JSON.stringify(filteredProjects))
+    fs.writeFileSync(__pathToProjectsJson, JSON.stringify(filteredProjects))
     res.status(204).send()
   } catch (error) {
     next(error)
