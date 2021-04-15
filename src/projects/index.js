@@ -50,8 +50,21 @@ const getStudents = () => {
 }
 
 router.get("/", (req, res) => {
-  const projects = getProjects()
-  res.status(200).send(projects)
+  try {
+      const projects = getProjects()
+      if (req. query && req.query.name) {
+        const filteredProjects = projects.filter(project => {
+          project.hasOwnProperty("name") && (project.name === req.params.name)
+        })
+        res.status(200).send(filteredProjects)
+      } else { 
+        res.status(200).send(projects)
+      }
+  } catch (error) {
+    console.log(error)
+    next(error)
+  }
+
 })
 
 router.get("/:id", (req, res, next) => {
