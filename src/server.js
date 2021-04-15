@@ -3,12 +3,12 @@ import listEndpoints from 'express-list-endpoints'
 import cors from 'cors'
 import studentRoutes from './students/index.js'
 import projectsRoutes from './projects/index.js'
-import {
-  badRequestErrorHandler,
-  notFoundErrorHandler,
-  forbiddenErrorHandler,
-  catchAllErrorHandler
-} from "./errorHandler"
+// import {
+//   badRequestErrorHandler,
+//   notFoundErrorHandler,
+//   forbiddenErrorHandler,
+//   catchAllErrorHandler
+// } from "./errorHandler"
 
 const server = express()
 const port = process.env.PORT || 3001
@@ -23,10 +23,10 @@ server.use(express.json())
 server.use('/students', loggerMiddleware, studentRoutes)
 server.use('/projects', projectsRoutes)
 
-server.use(badRequestErrorHandler)
-server.use(notFoundErrorHandler)
-server.use(forbiddenErrorHandler)
-server.use(catchAllErrorHandler)
+// server.use(badRequestErrorHandler)
+// server.use(notFoundErrorHandler)
+// server.use(forbiddenErrorHandler)
+// server.use(catchAllErrorHandler)
 
 console.log(listEndpoints(server))
 server.listen(port, () => {

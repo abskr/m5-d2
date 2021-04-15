@@ -6,9 +6,10 @@
 
 import express from 'express'
 import {check, validationResult} from 'express-validator'
-import fs from 'fs'
-import { fileURLToPath } from 'url'
-import { dirname, join, parse } from 'path'
+//import fs from 'fs'
+// import { fileURLToPath } from 'url'
+// import { dirname, join, parse } from 'path'
+import {getProjects, writeProjects, getStudents } from "../lib/fs-tools.js"
 import uniqid from 'uniqid'
 
 const router = express.Router()
@@ -17,41 +18,41 @@ const router = express.Router()
 // console.log(__currentPath)
 // const projectsJSONPath = join(dirname(__currentPath), 'projects.json')
 
-const __currentPath = fileURLToPath(import.meta.url)
-//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\projects\index.js
+// const __currentPath = fileURLToPath(import.meta.url)
+// //C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\projects\index.js
 
-const __pathToProjects = dirname(__currentPath)
-//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\projects
+// const __pathToProjects = dirname(__currentPath)
+// //C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\projects
 
-const __pathToProjectsJson = join(__pathToProjects, "projects.json")
-//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\projects\projects.json
+// const __pathToProjectsJson = join(__pathToProjects, "projects.json")
+// //C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\projects\projects.json
 
-const __pathToSrc = dirname(__pathToProjects)
-//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src
+// const __pathToSrc = dirname(__pathToProjects)
+// //C:\Users\abskr\Documents\Studium\Strive\m5-d2\src
 
-const __pathToStudents = join(__pathToSrc, "students")
-//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\students
+// const __pathToStudents = join(__pathToSrc, "students")
+// //C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\students
 
-const __pathToStudentsJson = join(__pathToStudents, "students.json")
-//C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\students\students.json
+// const __pathToStudentsJson = join(__pathToStudents, "students.json")
+// //C:\Users\abskr\Documents\Studium\Strive\m5-d2\src\students\students.json
 
-const getProjects = () => {
-  const toBeBuffer = fs.readFileSync(__pathToProjectsJson)
-  const toBeString = toBeBuffer.toString()
-  const toBeJSON = JSON.parse(toBeString)
-  return toBeJSON
-}
+// const getProjects = () => {
+//   const toBeBuffer = fs.readFileSync(__pathToProjectsJson)
+//   const toBeString = toBeBuffer.toString()
+//   const toBeJSON = JSON.parse(toBeString)
+//   return toBeJSON
+// }
 
-const getStudents = () => {
-  const toBeBuffer = fs.readFileSync(__pathToStudentsJson)
-  const toBeString = toBeBuffer.toString()
-  const toBeJSON = JSON.parse(toBeString)
-  return toBeJSON
-}
+// const getStudents = () => {
+//   const toBeBuffer = fs.readFileSync(__pathToStudentsJson)
+//   const toBeString = toBeBuffer.toString()
+//   const toBeJSON = JSON.parse(toBeString)
+//   return toBeJSON
+// }
 
-router.get("/", (req, res) => {
+router.get("/", async (req, res, next) => {
   try {
-      const projects = getProjects()
+      const projects = await getProjects()
       if (req. query && req.query.name) {
         const filteredProjects = projects.filter(project => {
           project.hasOwnProperty("name") && (project.name === req.params.name)
@@ -67,9 +68,9 @@ router.get("/", (req, res) => {
 
 })
 
-router.get("/:id", (req, res, next) => {
+router.get("/:id", async (req, res, next) => {
   try {
-    const projects = getProjects()
+    const projects = await getProjects()
     const project = projects.filter(project => project.projectId === req.params.id)
     if (project.length > 0){
       res.send(project)
@@ -83,13 +84,13 @@ router.get("/:id", (req, res, next) => {
   }
 })
 
-router.post("/", [check("name").exists().withMessage("Insert name!"), check("repoURL").exists().isURL().withMessage("Insert a valid URL of the repository!"), check("liveURL").exists().isURL().withMessage("Insert a valid URL of your project!"), check("studentId").exists().withMessage("Insert your valid student ID!")], (req, res, next) => {
+router.post("/", [check("name").exists().withMessage("Insert name!"), check("repoURL").exists().isURL().withMessage("Insert a valid URL of the repository!"), check("liveURL").exists().isURL().withMessage("Insert a valid URL of your project!"), check("studentId").exists().withMessage("Insert your valid student ID!")], async (req, res, next) => {
   try {
     const errors = validationResult(req)
 
     if (errors.isEmpty()) {
-      const projects = getProjects()
-      const students = getStudents()
+      const projects = await getProjects()
+      const students = await getStudents()
       const newProject = {
         ...req.body,
         projectId: uniqid(),
@@ -98,7 +99,8 @@ router.post("/", [check("name").exists().withMessage("Insert name!"), check("rep
       const selectedStudent = students.filter(student => student.id === newProject.studentId)
       if (selectedStudent) {
         projects.push(newProject)
-        fs.writeFileSync(__pathToProjectsJson, JSON.stringify(projects))
+        // fs.writeFileSync(__pathToProjectsJson, JSON.stringify(projects))
+        await writeProjects(projects)
         res.status(201).send(newProject)
       } else {
         const err = new Error()
@@ -118,9 +120,9 @@ router.post("/", [check("name").exists().withMessage("Insert name!"), check("rep
   }
 })
 
-router.put("/:id", (req, res, next) => {
+router.put("/:id", async (req, res, next) => {
   try {
-    const projects = getProjects()
+    const projects = await getProjects()
     const newArrayOfProjects = projects.filter(project => project.projectId !== req.params.id)
     const editedProject = {
       ...req.body,
@@ -130,7 +132,8 @@ router.put("/:id", (req, res, next) => {
 
     if (editedProject.projectId === req.params.id) {
       newArrayOfProjects.push(editedProject)
-      fs.writeFileSync(__pathToProjectsJson, JSON.stringify(newArrayOfProjects))
+      //fs.writeFileSync(__pathToProjectsJson, JSON.stringify(newArrayOfProjects))
+      await writeProjects(newArrayOfProjects)
       res.send(editedProject)
     } else {
       res.status(400).send({errMsg: "No project found!"})
@@ -141,11 +144,12 @@ router.put("/:id", (req, res, next) => {
   }
 })
 
-router.delete("/:id", (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
   try {
-    const projects = getProjects()
+    const projects = await getProjects()
     const filteredProjects = projects.filter(project => project.projectId !== req.params.id)
-    fs.writeFileSync(__pathToProjectsJson, JSON.stringify(filteredProjects))
+    //fs.writeFileSync(__pathToProjectsJson, JSON.stringify(filteredProjects))
+    await writeProjects(filteredProjects)
     res.status(204).send()
   } catch (error) {
     next(error)
