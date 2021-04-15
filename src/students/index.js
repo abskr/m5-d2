@@ -15,6 +15,8 @@ import {getStudents, writeStudents } from "../lib/fs-tools.js"
 
 const router = express.Router()
 
+const pathToPublicFolder = 
+
 // const __filename = fileURLToPath(import.meta.url)
 // const studentsJSONPath = join(dirname(__filename), 'students.json')
 
